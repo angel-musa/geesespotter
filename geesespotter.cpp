@@ -33,12 +33,11 @@ void print_board(char * board, std::size_t x_dim, std::size_t y_dim)
         // prints out each x rows 
         for(std::size_t j {0}; j < x_dim; j++)
         {
-            // if field is revelaed, the value will be less than the value of the hidden bit 
+            
             if((board[index] & marked_mask()) == marked_mask()) 
             {
                 std::cout << "M"; 
 
-            // if the value of the field is between 0x20 and 0x30 then it is hidden (hidden bit value is 0x20)
             } else if ((board[index] & hidden_mask()) == hidden_mask())
             {
                 std::cout << "*";  
@@ -61,8 +60,8 @@ void hide_board(char * board, std::size_t x_dim, std::size_t y_dim)
 {
     for(std::size_t i = 0; i < (x_dim*y_dim); i++)
     {
-        //board[i] &= value_mask(); 
-        //board[i] |= hidden_mask(); 
+        board[i] &= value_mask(); 
+        board[i] |= hidden_mask(); 
     }
 }
 
@@ -101,30 +100,18 @@ if((board[index] & hidden_mask()) != hidden_mask())
 int indexFinder(char*board, std::size_t x_dim, std::size_t y_dim, std::size_t x_loc, std::size_t y_loc)
 {
     // finds index of the coordinate
-    if(x_loc < 0|| x_loc > x_dim)
+    if(x_loc < 0|| x_loc >= x_dim)
     {
         // std::cout << "Not found" << std::endl; 
         return -1; 
-    }else if(y_loc > y_dim || y_loc < 0)
+    }else if(y_loc >= y_dim || y_loc < 0)
     {
         // std::cout << "Not found"<< std::endl; 
         return -1; 
     }
 
-    int index{-1}; 
-    for(std::size_t i{0}; i < y_loc; i++)
-    {
-        for(std::size_t j{0}; j < x_dim; j++)
-        {
-            index++; 
-        }
-    }
+    int index = (x_loc*x_dim) + y_loc; 
 
-    for (std::size_t k{0}; k < x_loc + 1; k++)
-    {
-        index++; 
-    }
-    
     return index; 
     
 }
@@ -231,8 +218,6 @@ if(((board[index] & value_mask())) == 9)
         }
     }
 
-    std::cout<<"n from goosecountwer: "<<n<<std::endl;
-
     return n; 
    
 }
@@ -264,40 +249,138 @@ void compute_neighbours(char * board, std::size_t x_dim, std::size_t y_dim)
 }
 bool is_game_won(char * board, std::size_t x_dim, std::size_t y_dim)
 {
+    int hiddentiles{0}; 
+    int index = 0; 
+    int goose = 0; 
+
+   // if everything that is hidden is geese 
+   for(int i{0}; i < x_dim*y_dim; i++)
+   {
+    if((board[index] & hidden_mask()) == hidden_mask())
+    {
+        hiddentiles++; 
+        if ((board[index] & value_mask()) == 9)
+        {
+            goose++; 
+        }
+    }
+    index++; 
+   }
+
+   if(hiddentiles == goose)
+   {
+    return true; 
+   }
+
     return false; 
+    
 }
 int reveal(char * board, std::size_t x_dim, std::size_t y_dim, std::size_t x_loc, std::size_t y_loc)
 {
 
-    // finds index of the coordinate
-    int index{-1}; 
-    for(std::size_t i{0}; i < y_loc; i++)
-    {
-        for(std::size_t j{0}; j < x_dim; j++)
-        {
-            index++; 
-        }
-    }
+   int index = indexFinder(board, x_dim, y_dim, y_loc, x_loc); 
+   int row = y_loc; 
+   int col = x_loc; 
 
-    for (std::size_t k{0}; k < x_loc + 1; k++)
-    {
-        index++; 
-    }
-
-    // if the value at the index is 0, reveal the 8 adjacent tiles - not complete 
-
-
+    
     if((board[index] & marked_mask()) == marked_mask()) // if the board is marked, return 1
     {
         return 1; 
     } else if ((board[index] & hidden_mask()) != hidden_mask()) // if the board is not hidden (revealed), return 2
     {
         return 2; 
-    }else // else: return 0
+    }else 
     {
-        return 0; 
-    }
-    
+        board[index] = board[index] & value_mask(); 
+        
+        if ((board[index] & value_mask()) == 9)
+        {
+            return 9; 
+        }
+
+        if(board[index] == 0)
+        {
+            // reveal 8 adjacent tiles 
+
+            // reveal upper left 
+            row = y_loc -1; 
+            col = x_loc -1; 
+            index = indexFinder(board, x_dim, y_dim, row, col); 
+            if(index != -1)
+            {
+            board[index] = board[index] & value_mask(); 
+            } 
+
+            // reveal top: 
+            row = y_loc - 1; 
+            col = x_loc; 
+            index = indexFinder(board, x_dim, y_dim, row, col); 
+            if(index != -1)
+            {
+            board[index] = board[index] & value_mask(); 
+            } 
+
+            // reveal upper right
+            row = y_loc -1; 
+            col = x_loc + 1; 
+            index = indexFinder(board, x_dim, y_dim, row, col); 
+            if(index != -1)
+            {
+            board[index] = board[index] & value_mask(); 
+            } 
+
+            // reveal left
+            row = y_loc; 
+            col = x_loc - 1; 
+            index = indexFinder(board, x_dim, y_dim, row, col); 
+            if(index != -1)
+            {
+            board[index] = board[index] & value_mask(); 
+            } 
+
+            // reveal right 
+            row = y_loc; 
+            col = x_loc + 1; 
+            index = indexFinder(board, x_dim, y_dim, row, col); 
+            if(index != -1)
+            {
+            board[index] = board[index] & value_mask(); 
+            } 
+
+            // reveal bottom left 
+            row = y_loc + 1; 
+            col = x_loc - 1; 
+            index = indexFinder(board, x_dim, y_dim, row, col); 
+            if(index != -1)
+            {
+            board[index] = board[index] & value_mask(); 
+            } 
+
+            // reveal bottom 
+            row = y_loc + 1; 
+            col = x_loc; 
+            index = indexFinder(board, x_dim, y_dim, row, col); 
+            if(index != -1)
+            {
+            board[index] = board[index] & value_mask(); 
+            } 
+
+            // reveal bottom right 
+            row = y_loc + 1; 
+            col = x_loc + 1; 
+            index = indexFinder(board, x_dim, y_dim, row, col); 
+            if(index != -1)
+            {
+            board[index] = board[index] & value_mask(); 
+            } 
+        }
+
+       // revealing the value 
+       // if the value is 0, reveal the adjacent 8 tiles 
+       // removing hidden mask? 
+    } 
+
+    // if its not zero, remove hidden mask 
 
     return 0; 
 }
